@@ -119,7 +119,7 @@ CameraSync.prototype = {
             .premultiply(scale)
             .premultiply(translateMap)
 
-
+        this.camera.projectionMatrixInverse.getInverse(this.camera.projectionMatrix);
         // utils.prettyPrintMatrix(this.camera.projectionMatrix.elements);
     }
 }
