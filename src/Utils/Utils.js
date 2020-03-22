@@ -200,7 +200,11 @@ var utils = {
         rotation: function(r, currentRotation){
 
             // if number provided, rotate only in Z by that amount
-            if (typeof r === 'number') r = {z:r};
+            if (typeof r === 'number') {
+                r = {z:r}
+            } else if (Array.isArray(r)) {
+                r = {x:r[0], y:r[1], z:r[2]};
+            } else r = {}
 
             var degrees = this.applyDefault([r.x, r.y, r.z], currentRotation);
             var radians = utils.radify(degrees);
@@ -209,8 +213,9 @@ var utils = {
         },
 
         scale: function(s, currentScale){
-            if (typeof s === 'number') return s = [s,s,s]; 
-            else return this.applyDefault([s.x, s.y, s.z], currentScale);
+            if (typeof s === 'number') {
+                return s = [s,s,s]; 
+            } else return this.applyDefault([s.x, s.y, s.z], currentScale);
         },
 
         applyDefault: function(array, current){
