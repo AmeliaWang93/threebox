@@ -24,8 +24,9 @@
   "dependencies": {
     "@turf/turf": "^5.1.6",
     "tape": "^4.10.1",
+    "three": "^0.114.0",
     "turf": "^3.0.14",
-    "watchify": "^3.11.1",
-    "uglifyify": "5.0.1"
+    "uglifyify": "^5.0.2",
+    "watchify": "^3.11.1"
   }
 }
