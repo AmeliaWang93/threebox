@@ -64,13 +64,18 @@
 					directionalLight2.position.set(0, 70, 100).normalize();
 					tb.scene.add(directionalLight2);
 
-					var tubeOptions = {
-						geometry: lineGeometry,
-						radius: 1,
-						sides: 8,
-						material: 'MeshPhysicalMaterial',
-						color:'#00ffff'
+					let options = {
+						obj: 'models/Truck.obj',
+						mtl: 'models/Truck.mtl',
+						scale: 0.1
 					}
+					let modelOrigin = [4.606859, 52.454803]
+					tb.loadObj(options, function(model) {
+
+						truck = model.setCoords(modelOrigin);
+						tb.add(truck);                        
+					})
+					
                     this.tileSet = new TileSet();
                     this.tileSet.load('https://saturnus.geodan.nl/maquette_nl/data/buildingtiles_velsen_3857/tileset.json', {}).then(()=>{
                         this.tileSet.root.checkLoad();
