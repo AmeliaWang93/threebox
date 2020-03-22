@@ -56,11 +56,11 @@
 						mbxContext,
 						{defaultLights: true}
 					);
-					let directionalLight = new THREE.DirectionalLight(0xffffff);
+					let directionalLight = new THREE.DirectionalLight(0xffffff, 0.9);
 					directionalLight.position.set(0, -70, 100).normalize();
 					tb.scene.add(directionalLight);
 
-					let directionalLight2 = new THREE.DirectionalLight(0x999999);
+					let directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.7);
 					directionalLight2.position.set(0, 70, 100).normalize();
 					tb.scene.add(directionalLight2);
 
@@ -86,16 +86,21 @@
 		let highlighted = [];
 		let active = false;
 		let greenMaterial = new THREE.MeshPhongMaterial( {
-			color: 0xaaffaa, 
+			color: 0x55aa55, 
 			side: THREE.DoubleSide
 		});
 		let redMaterial = new THREE.MeshPhongMaterial( {
 			color: 0x660000, 
 			side: THREE.DoubleSide
 		});
-                    
+			
+		let prevIntersect;
+
 		map.on('mousemove', function(e){
 
+			if (!tb) {
+				return; // tb not yet ready
+			}
 			// Clear old objects
 			highlighted.forEach(function(h) {
 				h.material = h.orgmaterial;
@@ -104,8 +109,9 @@
 
 
 			// calculate objects intersecting the picking ray
-			var intersect = tb.queryRenderedFeatures(e.point)[0]
-			var intersectionExists = typeof intersect == "object"
+			let intersects = tb.queryRenderedFeatures(e.point);
+
+			let intersect = intersects[0];
 
 			// if intersect exists, highlight it
 			if (intersect) {
@@ -116,8 +122,8 @@
 			}
 
 			// on state change, fire a repaint
-			if (active !== intersectionExists) {
-				active = intersectionExists;
+			if (prevIntersect !== intersect) {
+				prevIntersect = intersect;
 				tb.repaint();
 			}
 		});
