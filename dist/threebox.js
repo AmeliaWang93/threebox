@@ -400,7 +400,11 @@ var utils = {
         rotation: function(r, currentRotation){
 
             // if number provided, rotate only in Z by that amount
-            if (typeof r === 'number') r = {z:r};
+            if (typeof r === 'number') {
+                r = {z:r}
+            } else if (Array.isArray(r)) {
+                r = {x:r[0], y:r[1], z:r[2]};
+            } else r = {}
 
             var degrees = this.applyDefault([r.x, r.y, r.z], currentRotation);
             var radians = utils.radify(degrees);
@@ -409,8 +413,9 @@ var utils = {
         },
 
         scale: function(s, currentScale){
-            if (typeof s === 'number') return s = [s,s,s]; 
-            else return this.applyDefault([s.x, s.y, s.z], currentScale);
+            if (typeof s === 'number') {
+                return s = [s,s,s]; 
+            } else return this.applyDefault([s.x, s.y, s.z], currentScale);
         },
 
         applyDefault: function(array, current){
@@ -1997,40 +2002,41 @@ function loadObj(options, cb){
         
 
         // TODO: Support formats other than OBJ/MTL
-        const objLoader = new OBJLoader();
-        const materialLoader = new MTLLoader();
-        materialLoader.load(options.mtl, loadObject, () => (null), error => {
-            console.warn("No material file found for SymbolLayer3D model " + m);
-        });
-
-        function loadObject(materials) {
-
-            if (materials) {
-                materials.preload();
-                objLoader.setMaterials( materials );
-            }
-            
-            objLoader.load(options.obj, obj => {
-
-            	var r = utils.types.rotation(options, [0, 0, 0]);
-            	var s = utils.types.scale(options, [1, 1, 1]);
-
-            	obj = obj.children[0];
-            	obj.rotation.set(r[0] + Math.PI/2, r[1] + Math.PI, r[2]);
-            	obj.scale.set(s[0], s[1], s[2]);
-
-            	var projScaleGroup = new THREE.Group();
-            	projScaleGroup.add(obj)
-		        var userScaleGroup = Objects.prototype._makeGroup(projScaleGroup, options);
-		        Objects.prototype._addMethods(userScaleGroup);
-
-                cb(userScaleGroup);
-
-            }, () => (null), error => {
-                console.error("Could not load model file.");    
-            } );
-
-        };
+        if (options.mtl && options.obj) {
+            const objLoader = new OBJLoader();
+            const materialLoader = new MTLLoader();
+            materialLoader.load(options.mtl, loadObject, () => (null), error => {
+                console.warn("No material file found for SymbolLayer3D model " + m);
+            });
+    
+            function loadObject(materials) {
+    
+                if (materials) {
+                    materials.preload();
+                    objLoader.setMaterials( materials );
+                }
+                
+                objLoader.load(options.obj, obj => {
+    
+                    var r = utils.types.rotation(options.rotation, [0, 0, 0]);
+                    var s = utils.types.scale(options.scale, [1, 1, 1]);
+    
+                    obj = obj.children[0];
+                    obj.rotation.set(r[0] + Math.PI/2, r[1] + Math.PI, r[2]);
+                    obj.scale.set(s[0], s[1], s[2]);
+    
+                    var projScaleGroup = new THREE.Group();
+                    projScaleGroup.add(obj)
+                    var userScaleGroup = Objects.prototype._makeGroup(projScaleGroup, options);
+                    Objects.prototype._addMethods(userScaleGroup);
+    
+                    cb(userScaleGroup);
+    
+                }, () => (null), error => {
+                    console.error("Could not load model file.");    
+                } );
+            } 
+        } 
 	}
 
 
