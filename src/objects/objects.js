@@ -41,11 +41,11 @@ Objects.prototype = {
 
 	},
 
-	_addMethods: function(obj, static){
+	_addMethods: function(obj, isStatic){
 
 		var root = this;
 
-		if (static) {
+		if (isStatic) {
 
 		}
 
@@ -93,7 +93,7 @@ Objects.prototype = {
 
 		obj.add = function(){
 	        root.world.add(obj);
-	        if (!static) obj.set({position:obj.coordinates});
+	        if (!isStatic) obj.set({position:obj.coordinates});
 	        return obj;
 		}
 
