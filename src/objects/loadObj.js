@@ -33,8 +33,8 @@ function loadObj(options, cb){
             
             objLoader.load(options.obj, obj => {
 
-            	var r = utils.types.rotation(options, [0, 0, 0]);
-            	var s = utils.types.scale(options, [1, 1, 1]);
+            	var r = utils.types.rotation(options.rotation, [0, 0, 0]);
+            	var s = utils.types.scale(options.scale, [1, 1, 1]);
 
             	obj = obj.children[0];
             	obj.rotation.set(r[0] + Math.PI/2, r[1] + Math.PI, r[2]);
