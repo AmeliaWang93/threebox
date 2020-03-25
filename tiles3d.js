@@ -129,8 +129,11 @@ class  ThreeDeeTile
               //Add the batchtable to the userData since gltLoader doesn't deal with it
               gltf.scene.children[0].userData = d.batchTableJson;
               //var meshMaterial = new THREE.MeshNormalMaterial({color: 0x7777ff});
-              gltf.scene.traverse(child => {
-                //child.material=meshMaterial;
+              // fix for GLTFLoader createDefaultMaterial and THREE.REVISION 114
+							gltf.scene.traverse(child => {
+                if (child.material) {
+                  child.material.depthWrite = true; 
+                }
               });
               if (this.styleParams.color != null || this.styleParams.opacity != null) {
                 let color = new THREE.Color(self.styleParams.color);

@@ -18,13 +18,36 @@
 			width: 100%;
 			height: 100%;
 		}
+		#infobox { 
+            position:absolute; 
+            top:10px; 
+            left:10px; 
+            width:250px; 
+            min-height:50px;
+			max-height: calc(100% - 50px);
+            background-color:white;
+            border:1px solid lightgray;
+            border-radius: 2px;
+            padding: 5px;
+            font-family: Arial, Helvetica, sans-serif;
+			word-wrap: break-word;
+			overflow: hidden;
+        }
+        #infobox .label { font-weight: bold;}
 	</style>
+	<script>
+		// infobox helper function
+		function objectToHTML(obj) {
+			return Object.entries(obj).map((keyVal)=>{
+				return `<span class="label">${keyVal[0]}:</span> ${keyVal[1]}`
+			}).join('<br>');			
+		}
+	</script>
 </head>
 <body>
 	<div id='map' class='map'></div>
-
+	<div id='infobox'></div>
 	<script>
-
 		if(!config) console.error("Config not set! Make a copy of 'config_template.js', add in your access token, and save the file as 'config.js'.");
 		
 		mapboxgl.accessToken = config.accessToken;
@@ -138,7 +161,30 @@
 				var nearestObject = intersect.object;
 				nearestObject.orgmaterial = nearestObject.material;
 				nearestObject.material = greenMaterial;
-				highlighted.push(nearestObject)
+				highlighted.push(nearestObject);
+				if (intersect.object.geometry.attributes && intersect.object.geometry.attributes._batchid) {
+					let idx = intersect.object.geometry.attributes._batchid.data.array[intersect.faceIndex*7+6];
+					let faceCount = (intersect.object.geometry.attributes._batchid.data.array.length - 7) / 7;
+					let blockFaceIndices = [];
+					for (let faceIndex = 0; faceIndex < faceCount; faceIndex++) {
+						if (intersect.object.geometry.attributes._batchid.data.array[faceIndex*7+6] === idx) {
+							blockFaceIndices.push(faceIndex);
+						}
+					}
+					document.querySelector('#infobox').innerHTML = objectToHTML({
+						Blockid: intersect.object.parent.userData.id[idx],
+						faceIndex: intersect.faceIndex,
+						idx: idx,
+						faceCount: faceCount,
+						blockFaceCount: blockFaceIndices.length,
+						blockFaceIndices: blockFaceIndices.join(',')
+					});
+					
+				} else {
+					document.querySelector('#infobox').innerHTML = "not a b3dm object"
+				}
+			} else {
+				document.querySelector('#infobox').innerHTML = "none"
 			}
 
 			// on state change, fire a repaint
