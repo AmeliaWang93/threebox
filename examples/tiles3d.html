@@ -64,7 +64,7 @@
 
 		//generate a spiral line geometry (not essential for understanding this demo)
 
-		var lineGeometry = [];
+		let tileSet;
 
 		map.on('load', function() {
 
@@ -113,10 +113,10 @@
 							tb.update();                 
 					});
 					
-                    this.tileSet = new TileSet();
-                    this.tileSet.load('https://saturnus.geodan.nl/maquette_nl/data/buildingtiles_velsen_3857/tileset.json', {}).then(()=>{
-                        this.tileSet.root.checkLoad();
-						tb.add(this.tileSet.root.totalContent);
+                    tileSet = new TileSet();
+                    tileSet.load('https://saturnus.geodan.nl/maquette_nl/data/buildingtiles_velsen_3857/tileset.json', {}).then(()=>{
+                        tileSet.root.checkLoad();
+						tb.add(tileSet.root.totalContent);
 						tb.update();
                     })
 				},
@@ -128,10 +128,13 @@
 		});
 		let highlighted = [];
 		let active = false;
-		let greenMaterial = new THREE.MeshPhongMaterial( {
-			color: 0x55aa55, 
-			side: THREE.DoubleSide
-		});
+		//let greenMaterial = new THREE.MeshPhongMaterial( {
+		//	color: 0x55aa55, 
+		//	side: THREE.DoubleSide
+		//});
+		let greenMaterial = new THREE.MeshBasicMaterial( {
+			color: 0x55aa55
+		} );
 		let redMaterial = new THREE.MeshPhongMaterial( {
 			color: 0x660000, 
 			side: THREE.DoubleSide
@@ -146,7 +149,7 @@
 			}
 			// Clear old objects
 			highlighted.forEach(function(h) {
-				h.material = h.orgmaterial;
+				//h.material = h.orgmaterial;
 			});
 			highlighted.length = 0;
 
@@ -156,34 +159,111 @@
 
 			let intersect = intersects[0];
 
+			let prevObject = null;
 			// if intersect exists, highlight it
 			if (intersect) {
 				var nearestObject = intersect.object;
 				nearestObject.orgmaterial = nearestObject.material;
-				nearestObject.material = greenMaterial;
+				//nearestObject.material = greenMaterial;
 				highlighted.push(nearestObject);
 				if (intersect.object.geometry.attributes && intersect.object.geometry.attributes._batchid) {
-					let idx = intersect.object.geometry.attributes._batchid.data.array[intersect.faceIndex*7+6];
-					let faceCount = (intersect.object.geometry.attributes._batchid.data.array.length - 7) / 7;
-					let blockFaceIndices = [];
-					for (let faceIndex = 0; faceIndex < faceCount; faceIndex++) {
-						if (intersect.object.geometry.attributes._batchid.data.array[faceIndex*7+6] === idx) {
-							blockFaceIndices.push(faceIndex);
+					let ip1 = intersect.object.geometry.index.array[intersect.faceIndex];
+					if (ip1 !== prevObject) {
+						prevObject = ip1;
+						let objGeometry = intersect.object.geometry;
+						let ip2 = objGeometry.index.array[intersect.faceIndex + 1];
+						let ip3 = objGeometry.index.array[intersect.faceIndex + 2];
+						let idx = objGeometry.attributes._batchid.data.array[ip1*7+6];
+						let idx2 = objGeometry.attributes._batchid.data.array[ip2*7+6];
+						let idx3 = objGeometry.attributes._batchid.data.array[ip3*7+6];
+						let vertexCount = (objGeometry.attributes._batchid.data.array.length - 7) / 7;
+						let blockFaces = [];
+						for (let faceIndex = 0; faceIndex < objGeometry.index.count; faceIndex += 3) {
+							let p1 = objGeometry.index.array[faceIndex];
+							if (objGeometry.attributes._batchid.data.array[p1*7+6] === idx) {
+								let p2 = objGeometry.index.array[faceIndex+1];
+								if (objGeometry.attributes._batchid.data.array[p2*7+6] === idx) {
+									let p3 = objGeometry.index.array[faceIndex+2];
+									if (objGeometry.attributes._batchid.data.array[p3*7+6] === idx) {
+										blockFaces.push(faceIndex);
+									}
+								}
+							}
 						}
+						let highLightGeometry = new THREE.Geometry(); 
+						for (let vertexCount = 0, face = 0; face < blockFaces.length; face++) {
+							let faceIndex = blockFaces[face];
+							let p1 = objGeometry.index.array[faceIndex];
+							let p2 = objGeometry.index.array[faceIndex+1];
+							let p3 = objGeometry.index.array[faceIndex+2];
+							let positions = objGeometry.attributes.position.data.array;
+							highLightGeometry.vertices.push(
+								new THREE.Vector3(positions[p1*7], positions[p1*7+1], positions[p1*7+2]),
+								new THREE.Vector3(positions[p2*7], positions[p2*7+1], positions[p2*7+2]),
+								new THREE.Vector3(positions[p3*7], positions[p3*7+1], positions[p3*7+2]),
+							)
+							highLightGeometry.faces.push(new THREE.Face3(vertexCount, vertexCount+1, vertexCount+2));
+							vertexCount += 3;
+						}
+						highLightGeometry.computeBoundingSphere();
+						//let translateZ = new THREE.Matrix4().makeTranslation(new THREE.Vector3(0,0,.1));
+						//highLightGeometry.applyMatrix4(translateZ);
+						let rotateX = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);
+						highLightGeometry.applyMatrix4(rotateX); // convert from GLTF Y-up to Z-up
+						
+		
+						let tileMatrix = new THREE.Matrix4().fromArray(tileSet.root.transform);
+      					let scale = Constants.PROJECTION_WORLD_SIZE;
+      					let transform2ThreeBox = new THREE.Matrix4().makeScale(-scale, -scale, scale);
+      					highLightGeometry.applyMatrix4(transform2ThreeBox.multiply(tileMatrix));
+						
+
+						let material = new THREE.MeshBasicMaterial({color: 0xcc0000});
+						material.depthTest = true;
+						material.depthWrite = true;
+						material.side = THREE.DoubleSide;
+						let highlight = new THREE.Mesh(highLightGeometry, material);
+
+						/*
+						let wireframe = new THREE.WireframeGeometry(highLightGeometry);
+						let highlight = new THREE.LineSegments(wireframe);
+						highlight.material.depthTest = false;
+						highlight.material.opacity = 0.95;
+						highlight.material.tranparent = true;
+						*/
+
+						//highlight.geometry.applyMatrix(intersect.object.matrixWorld);
+						//tileSet.root.totalContent.add(highlight);
+						tb.add(highlight);
+						tb.update();
+						/*
+						line.geometry.applyMatrix(intersect.object.matrixWorld);
+						
+						let tileMatrix = new THREE.Matrix4().fromArray(tileSet.root.transform);
+      					let scale = Constants.PROJECTION_WORLD_SIZE;
+      					let transform2ThreeBox = new THREE.Matrix4().makeScale(-scale, -scale, scale);
+						line.applyMatrix4(transform2ThreeBox.multiply(tileMatrix));
+						
+						tb.add(line);
+						tb.update();
+						  */
+						document.querySelector('#infobox').innerHTML = objectToHTML({
+							Blockid: intersect.object.parent.userData.id[idx],
+							faceIndex: intersect.faceIndex,
+							idx: idx,
+							idx2: idx2,
+							idx3: idx3,
+							vertexCount: vertexCount,
+							blockFacesCount: blockFaces.length,
+							blockFaces: blockFaces.join(',')
+						});
 					}
-					document.querySelector('#infobox').innerHTML = objectToHTML({
-						Blockid: intersect.object.parent.userData.id[idx],
-						faceIndex: intersect.faceIndex,
-						idx: idx,
-						faceCount: faceCount,
-						blockFaceCount: blockFaceIndices.length,
-						blockFaceIndices: blockFaceIndices.join(',')
-					});
-					
-				} else {
+  				} else {
+					prevObject = null;
 					document.querySelector('#infobox').innerHTML = "not a b3dm object"
 				}
 			} else {
+				prevObject = null;
 				document.querySelector('#infobox').innerHTML = "none"
 			}
 
