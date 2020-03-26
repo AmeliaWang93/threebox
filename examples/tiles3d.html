@@ -167,18 +167,19 @@
 				//nearestObject.material = greenMaterial;
 				highlighted.push(nearestObject);
 				if (intersect.object.geometry.attributes && intersect.object.geometry.attributes._batchid) {
-					let ip1 = intersect.object.geometry.index.array[intersect.faceIndex];
-					if (ip1 !== prevObject) {
-						prevObject = ip1;
-						let objGeometry = intersect.object.geometry;
-						let ip2 = objGeometry.index.array[intersect.faceIndex + 1];
-						let ip3 = objGeometry.index.array[intersect.faceIndex + 2];
-						let idx = objGeometry.attributes._batchid.data.array[ip1*7+6];
+					let objGeometry = intersect.object.geometry;
+					let ip1 = objGeometry.index.array[intersect.faceIndex*3];
+					let idx = objGeometry.attributes._batchid.data.array[ip1*7+6];
+					if (idx !== prevObject) {
+						prevObject = idx;
+						
+						let ip2 = objGeometry.index.array[intersect.faceIndex*3 + 1];
+						let ip3 = objGeometry.index.array[intersect.faceIndex*3 + 2];
 						let idx2 = objGeometry.attributes._batchid.data.array[ip2*7+6];
 						let idx3 = objGeometry.attributes._batchid.data.array[ip3*7+6];
-						let vertexCount = (objGeometry.attributes._batchid.data.array.length - 7) / 7;
+						let vertexCount = (objGeometry.attributes._batchid.data.array.length) / 7;
 						let blockFaces = [];
-						for (let faceIndex = 0; faceIndex < objGeometry.index.count; faceIndex += 3) {
+						for (let faceIndex = 0; faceIndex < objGeometry.index.array.length; faceIndex += 3) {
 							let p1 = objGeometry.index.array[faceIndex];
 							if (objGeometry.attributes._batchid.data.array[p1*7+6] === idx) {
 								let p2 = objGeometry.index.array[faceIndex+1];
@@ -210,7 +211,6 @@
 						//highLightGeometry.applyMatrix4(translateZ);
 						let rotateX = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);
 						highLightGeometry.applyMatrix4(rotateX); // convert from GLTF Y-up to Z-up
-						
 		
 						let tileMatrix = new THREE.Matrix4().fromArray(tileSet.root.transform);
       					let scale = Constants.PROJECTION_WORLD_SIZE;
@@ -223,6 +223,7 @@
 						material.depthWrite = true;
 						material.side = THREE.DoubleSide;
 						let highlight = new THREE.Mesh(highLightGeometry, material);
+						highlight.translateZ(0.1);
 
 						/*
 						let wireframe = new THREE.WireframeGeometry(highLightGeometry);
