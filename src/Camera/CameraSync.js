@@ -72,8 +72,11 @@ CameraSync.prototype = {
         // Add a bit extra to avoid precision problems when a fragment's distance is exactly `furthestDistance`
         const farZ = furthestDistance * 1.01;
 
-        this.camera.projectionMatrix = utils.makePerspectiveMatrix(this.state.fov, t.width / t.height, 1, farZ);
-        
+        // someday @ansis set further near plane to fix precision for deckgl,so we should fix it to use mapbox-gl v1.3+ correctly
+        // https://github.com/mapbox/mapbox-gl-js/commit/5cf6e5f523611bea61dae155db19a7cb19eb825c#diff-5dddfe9d7b5b4413ee54284bc1f7966d
+        const nearZ = t.height / 50;
+
+        this.camera.projectionMatrix = utils.makePerspectiveMatrix(this.state.fov, t.width / t.height, nearZ, farZ);
 
         var cameraWorldMatrix = new THREE.Matrix4();
         var cameraTranslateZ = new THREE.Matrix4().makeTranslation(0,0,this.state.cameraToCenterDistance);
